@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+}
+
+group 'com.thdespou.natterapi'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.30'
+    compile group: 'com.h2database', name: 'h2', version: '1.3.148'
+    compile "com.sparkjava:spark-core:2.9.2"
+    compile group: 'org.json', name: 'json', version: '20200518'
+    compile group: 'org.dalesbred', name: 'dalesbred', version: '1.3.2'
+}
