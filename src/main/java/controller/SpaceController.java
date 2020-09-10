@@ -16,7 +16,14 @@ public class SpaceController {
     public JSONObject createSpace(Request req, Response res) {
         var json = new JSONObject(req.body());
         var spaceName = json.getString("name");
+        // Validation
+        if (spaceName.length() > 255) {
+            throw new IllegalArgumentException("space name too long");
+        }
         var owner = json.getString("owner");
+        if (!owner.matches("[a-zA-Z][a-zA-Z0-9]{1,29}")) {
+            throw new IllegalArgumentException("invalid username");
+        }
 
         return database.withTransaction(tx -> {
             // Get next id

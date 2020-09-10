@@ -1,6 +1,44 @@
-09-10 21:29:02 jdbc[2]: exception
-org.h2.jdbc.JdbcSQLException: Table "SPACES" not found; SQL statement:
-INSERT INTO spaces(space_id, name, owner) VALUES(3, 'Hello', 'world'); [42102-148]
-09-10 21:29:02 jdbc[2]: exception
-org.h2.jdbc.JdbcSQLException: Table "SPACES" not found; SQL statement:
-INSERT INTO spaces(space_id, name, owner) VALUES(4, 'test', ''); DROP TABLE spaces; --'); [42102-148]
+09-10 21:42:59 jdbc[2]: exception
+org.h2.jdbc.JdbcSQLException: User "NATTER_API_USER" already exists; SQL statement:
+
+
+CREATE USER natter_api_user PASSWORD 'password';
+GRANT SELECT, INSERT ON spaces, messages TO natter_api_user;
+ [90033-148]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:327)
+	at org.h2.message.DbException.get(DbException.java:167)
+	at org.h2.message.DbException.get(DbException.java:144)
+	at org.h2.command.ddl.CreateUser.update(CreateUser.java:69)
+	at org.h2.command.CommandContainer.update(CommandContainer.java:69)
+	at org.h2.command.Command.executeUpdate(Command.java:200)
+	at org.h2.command.CommandList.update(CommandList.java:41)
+	at org.h2.command.CommandList.executeRemaining(CommandList.java:36)
+	at org.h2.command.CommandList.update(CommandList.java:42)
+	at org.h2.command.CommandList.executeRemaining(CommandList.java:36)
+	at org.h2.command.CommandList.update(CommandList.java:42)
+	at org.h2.command.CommandList.executeRemaining(CommandList.java:36)
+	at org.h2.command.CommandList.update(CommandList.java:42)
+	at org.h2.command.CommandList.executeRemaining(CommandList.java:36)
+	at org.h2.command.CommandList.update(CommandList.java:42)
+	at org.h2.command.CommandList.executeRemaining(CommandList.java:36)
+	at org.h2.command.CommandList.update(CommandList.java:42)
+	at org.h2.command.CommandList.executeRemaining(CommandList.java:36)
+	at org.h2.command.CommandList.update(CommandList.java:42)
+	at org.h2.command.Command.executeUpdate(Command.java:200)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdateInternal(JdbcPreparedStatement.java:143)
+	at org.h2.jdbc.JdbcPreparedStatement.executeUpdate(JdbcPreparedStatement.java:129)
+	at org.dalesbred.Database.lambda$update$1(Database.java:611)
+	at org.dalesbred.transaction.DefaultTransaction.execute(DefaultTransaction.java:51)
+	at org.dalesbred.transaction.DefaultTransactionManager.withNewTransaction(DefaultTransactionManager.java:59)
+	at org.dalesbred.transaction.AbstractTransactionManager.withTransaction(AbstractTransactionManager.java:61)
+	at org.dalesbred.Database.withTransaction(Database.java:199)
+	at org.dalesbred.Database.withTransaction(Database.java:188)
+	at org.dalesbred.Database.withTransaction(Database.java:160)
+	at org.dalesbred.Database.withCurrentTransaction(Database.java:262)
+	at org.dalesbred.Database.update(Database.java:604)
+	at org.dalesbred.Database.update(Database.java:622)
+	at Main.createTables(Main.java:37)
+	at Main.main(Main.java:19)
+09-10 21:43:21 jdbc[2]: exception
+org.h2.jdbc.JdbcSQLException: Value too long for column "OWNER VARCHAR(30) NOT NULL": "'a really long username that is more than 30 characters long' (59)"; SQL statement:
+INSERT INTO spaces(space_id, name, owner) VALUES(?, ?, ?); [90005-148]

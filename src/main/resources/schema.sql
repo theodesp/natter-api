@@ -15,5 +15,5 @@ CREATE SEQUENCE IF NOT EXISTS msg_id_seq;
 CREATE INDEX IF NOT EXISTS msg_timestamp_idx ON messages(msg_time);
 CREATE UNIQUE INDEX IF NOT EXISTS space_name_idx ON spaces(name);
 
-CREATE USER natter_api_user PASSWORD 'password';
+CREATE USER IF NOT EXISTS natter_api_user PASSWORD 'password';
 GRANT SELECT, INSERT ON spaces, messages TO natter_api_user;
