@@ -24,10 +24,13 @@ public class SpaceController {
                     "SELECT NEXT VALUE FOR space_id_seq;"
             );
             // Create new space
+//            database.updateUnique(
+//                    "INSERT INTO spaces(space_id, name, owner) " +
+//                            "VALUES(" + spaceId + ", '" + spaceName +
+//                            "', '" + owner + "');");
             database.updateUnique(
                     "INSERT INTO spaces(space_id, name, owner) " +
-                            "VALUES(" + spaceId + ", '" + spaceName +
-                            "', '" + owner + "');");
+                            "VALUES(?, ?, ?);", spaceId, spaceName, owner);
             res.status(HttpStatus.CREATED_201);
             res.header(HttpHeader.LOCATION.asString(), "/spaces/" + spaceId);
             return new JSONObject()

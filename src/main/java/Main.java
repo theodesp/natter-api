@@ -13,7 +13,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         // Create a Connection pool
         var datasource = JdbcConnectionPool.create(
-                "jdbc:h2:test", "natter", "password");
+                "jdbc:h2:test", "natter_api_user", "password");
         // Use Dalesbred wrapper
         var database = Database.forDataSource(datasource);
         createTables(database);
