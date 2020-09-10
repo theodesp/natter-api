@@ -1,0 +1,6 @@
+09-10 21:29:02 jdbc[2]: exception
+org.h2.jdbc.JdbcSQLException: Table "SPACES" not found; SQL statement:
+INSERT INTO spaces(space_id, name, owner) VALUES(3, 'Hello', 'world'); [42102-148]
+09-10 21:29:02 jdbc[2]: exception
+org.h2.jdbc.JdbcSQLException: Table "SPACES" not found; SQL statement:
+INSERT INTO spaces(space_id, name, owner) VALUES(4, 'test', ''); DROP TABLE spaces; --'); [42102-148]
