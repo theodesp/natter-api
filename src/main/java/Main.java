@@ -1,10 +1,13 @@
 import controller.SpaceController;
 import org.dalesbred.Database;
+import org.dalesbred.result.EmptyResultException;
 import org.eclipse.jetty.http.HttpStatus;
 import org.h2.jdbcx.JdbcConnectionPool;
+import org.json.JSONException;
 import org.json.JSONObject;
 import spark.Request;
 import spark.Response;
+import com.google.common.util.concurrent.*;
 
 import static spark.Spark.*;
 
@@ -19,11 +22,20 @@ public class Main {
                 "jdbc:h2:test", "natter_api_user", "password");
         // Use Dalesbred wrapper
         var database = Database.forDataSource(datasource);
+
+        var rateLimiter = RateLimiter.create(2.0d);
         createTables(database);
 
         // Init Controllers
         var spaceController = new SpaceController(database);
         post("/spaces", spaceController::createSpace);
+
+        before((req, res) -> {
+            if (!rateLimiter.tryAcquire()) {
+                res.header("Retry-After", "2");
+                halt(HttpStatus.TOO_MANY_REQUESTS_429);
+            }
+        });
 
         before(((req, res) -> {
             if (req.requestMethod().equals("POST") &&
