@@ -17,3 +17,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS space_name_idx ON spaces(name);
 
 CREATE USER IF NOT EXISTS natter_api_user PASSWORD 'password';
 GRANT SELECT, INSERT ON spaces, messages TO natter_api_user;
+
+CREATE TABLE IF NOT EXISTS users(
+    user_id VARCHAR(30) PRIMARY KEY,
+    pw_hash VARCHAR(255) NOT NULL
+);
+GRANT SELECT, INSERT ON users TO natter_api_user;

@@ -1,4 +1,5 @@
 import controller.SpaceController;
+import controller.UserController;
 import org.dalesbred.Database;
 import org.dalesbred.result.EmptyResultException;
 import org.eclipse.jetty.http.HttpStatus;
@@ -11,7 +12,6 @@ import com.google.common.util.concurrent.*;
 
 import static spark.Spark.*;
 
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -28,7 +28,13 @@ public class Main {
 
         // Init Controllers
         var spaceController = new SpaceController(database);
+        var userController = new UserController(database);
+
+        // Routes
         post("/spaces", spaceController::createSpace);
+        post("/users", userController::registerUser);
+
+        // Hooks
 
         before((req, res) -> {
             if (!rateLimiter.tryAcquire()) {
@@ -36,6 +42,8 @@ public class Main {
                 halt(HttpStatus.TOO_MANY_REQUESTS_429);
             }
         });
+
+        before(userController::authenticate);
 
         before(((req, res) -> {
             if (req.requestMethod().equals("POST") &&
