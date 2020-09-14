@@ -59,15 +59,16 @@ public class Main {
         after((req, res) -> {
             res.type("application/json");
         });
-        afterAfter((request, response) -> {
-            response.type("application/json;charset=utf-8");
-            response.header("X-Content-Type-Options", "nosniff");
-            response.header("X-Frame-Options", "DENY");
-            response.header("X-XSS-Protection", "0");
-            response.header("Cache-Control", "no-store");
-            response.header("Content-Security-Policy",
+        afterAfter((req, res) -> {
+            res.type("application/json;charset=utf-8");
+            res.header("X-Content-Type-Options", "nosniff");
+            res.header("X-Frame-Options", "DENY");
+            res.header("X-XSS-Protection", "0");
+            res.header("Cache-Control", "no-store");
+            res.header("Content-Security-Policy",
                     "default-src 'none'; frame-ancestors 'none'; sandbox");
-            response.header("Server", "");
+            res.header("Server", "");
+//            res.header("Strict-Transport-Security", "max-age=31536000");
                 });
 
         internalServerError(new JSONObject().put("error", "internal server error").toString());
