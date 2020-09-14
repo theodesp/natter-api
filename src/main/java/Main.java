@@ -1,3 +1,4 @@
+import controller.AuditController;
 import controller.SpaceController;
 import controller.UserController;
 import org.dalesbred.Database;
@@ -29,13 +30,20 @@ public class Main {
         // Init Controllers
         var spaceController = new SpaceController(database);
         var userController = new UserController(database);
+        var auditController = new AuditController(database);
 
         // SSL
         secure("deploy/keystore.jks", "password", null, null);
 
+        before(userController::authenticate);
+        before(auditController::auditRequestStart);
+        afterAfter(auditController::auditRequestEnd);
+        before("/spaces", userController::requireAuthentication);
+
         // Routes
         post("/spaces", spaceController::createSpace);
         post("/users", userController::registerUser);
+        get("/logs", auditController::readAuditLog);
 
         // Hooks
 
@@ -45,8 +53,6 @@ public class Main {
                 halt(HttpStatus.TOO_MANY_REQUESTS_429);
             }
         });
-
-        before(userController::authenticate);
 
         before(((req, res) -> {
             if (req.requestMethod().equals("POST") &&

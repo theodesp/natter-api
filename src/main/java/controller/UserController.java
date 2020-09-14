@@ -8,6 +8,7 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
 import spark.Request;
 import spark.Response;
+import static spark.Spark.*;
 
 import java.net.http.HttpHeaders;
 import java.nio.charset.StandardCharsets;
@@ -79,6 +80,15 @@ public class UserController {
         if (hash.isPresent() &&
                 SCryptUtil.check(password, hash.get())) {
             req.attribute("subject", username);
+        }
+    }
+
+    public void requireAuthentication(Request request,
+                                      Response response) {
+        if (request.attribute("subject") == null) {
+            response.header("WWW-Authenticate",
+                    "Basic realm=\"/\", charset=\"UTF-8\"");
+            halt(401);
         }
     }
 }
