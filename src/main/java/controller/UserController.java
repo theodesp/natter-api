@@ -6,6 +6,7 @@ import org.dalesbred.Database;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpStatus;
 import org.json.JSONObject;
+import spark.Filter;
 import spark.Request;
 import spark.Response;
 import static spark.Spark.*;
@@ -83,12 +84,34 @@ public class UserController {
         }
     }
 
-    public void requireAuthentication(Request request,
-                                      Response response) {
-        if (request.attribute("subject") == null) {
-            response.header("WWW-Authenticate",
+    public void requireAuthentication(Request req,
+                                      Response res) {
+        if (req.attribute("subject") == null) {
+            res.header("WWW-Authenticate",
                     "Basic realm=\"/\", charset=\"UTF-8\"");
-            halt(401);
+            halt(HttpStatus.UNAUTHORIZED_401);
         }
+    }
+
+    public Filter requirePermission(String method, String permission) {
+        return (req, res) -> {
+            if (!method.equalsIgnoreCase(req.requestMethod())) {
+                return;
+            }
+
+            requireAuthentication(req, res);
+
+            var spaceId = Long.parseLong(req.params(":spaceId"));
+            var username = (String) req.attribute("subject");
+
+            var perms = database.findOptional(String.class,
+                    "SELECT perms FROM permissions " +
+                            "WHERE space_id = ? AND user_id = ?",
+                    spaceId, username).orElse("");
+
+            if (!perms.contains(permission)) {
+                halt(HttpStatus.FORBIDDEN_403);
+            }
+        };
     }
 }

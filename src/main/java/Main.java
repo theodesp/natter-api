@@ -1,4 +1,5 @@
 import controller.AuditController;
+import controller.ModeratorController;
 import controller.SpaceController;
 import controller.UserController;
 import org.dalesbred.Database;
@@ -31,22 +32,45 @@ public class Main {
         var spaceController = new SpaceController(database);
         var userController = new UserController(database);
         var auditController = new AuditController(database);
+        var moderatorController = new ModeratorController(database);
 
         // SSL
         secure("deploy/keystore.jks", "password", null, null);
 
         before(userController::authenticate);
+
         before(auditController::auditRequestStart);
         afterAfter(auditController::auditRequestEnd);
-        before("/spaces", userController::requireAuthentication);
 
-        // Routes
+        before("/spaces", userController::requireAuthentication);
         post("/spaces", spaceController::createSpace);
+
+        before("/spaces/:spaceId/messages",
+                userController.requirePermission("POST", "w"));
+        post("/spaces/:spaceId/messages", spaceController::postMessage);
+
+        before("/spaces/:spaceId/messages/*",
+                userController.requirePermission("GET", "r"));
+        get("/spaces/:spaceId/messages/:msgId",
+                spaceController::readMessage);
+
+        before("/spaces/:spaceId/messages",
+                userController.requirePermission("GET", "r"));
+        get("/spaces/:spaceId/messages", spaceController::findMessages);
+
+        before("/spaces/:spaceId/members",
+                userController.requirePermission("POST", "rwd"));
+        post("/spaces/:spaceId/members", spaceController::addMember);
+
+        before("/spaces/:spaceId/messages/*",
+                userController.requirePermission("DELETE", "d"));
+        delete("/spaces/:spaceId/messages/:msgId",
+                moderatorController::deletePost);
+
         post("/users", userController::registerUser);
         get("/logs", auditController::readAuditLog);
 
         // Hooks
-
         before((req, res) -> {
             if (!rateLimiter.tryAcquire()) {
                 res.header("Retry-After", "2");
