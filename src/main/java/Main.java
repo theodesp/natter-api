@@ -30,6 +30,9 @@ public class Main {
         var spaceController = new SpaceController(database);
         var userController = new UserController(database);
 
+        // SSL
+        secure("deploy/keystore.jks", "password", null, null);
+
         // Routes
         post("/spaces", spaceController::createSpace);
         post("/users", userController::registerUser);
