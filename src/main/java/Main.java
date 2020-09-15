@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import spark.Request;
 import spark.Response;
 import com.google.common.util.concurrent.*;
+import spark.Spark;
 
 import static spark.Spark.*;
 
@@ -19,6 +20,7 @@ import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        Spark.staticFiles.location("/public");
         // Create a Connection pool
         var datasource = JdbcConnectionPool.create(
                 "jdbc:h2:test", "natter_api_user", "password");
