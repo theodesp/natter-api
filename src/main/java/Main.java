@@ -1,13 +1,12 @@
-import controller.AuditController;
-import controller.ModeratorController;
-import controller.SpaceController;
-import controller.UserController;
+import controller.*;
 import org.dalesbred.Database;
 import org.dalesbred.result.EmptyResultException;
 import org.eclipse.jetty.http.HttpStatus;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.json.JSONException;
 import org.json.JSONObject;
+import service.CookieTokenStore;
+import service.TokenStore;
 import spark.Request;
 import spark.Response;
 import com.google.common.util.concurrent.*;
@@ -20,7 +19,9 @@ import java.nio.file.Paths;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        Spark.staticFiles.location("/public");
+//        Spark.staticFiles.location("/public");
+        // SSL
+        secure("deploy/keystore.jks", "password", null, null);
         // Create a Connection pool
         var datasource = JdbcConnectionPool.create(
                 "jdbc:h2:test", "natter_api_user", "password");
@@ -30,14 +31,22 @@ public class Main {
         var rateLimiter = RateLimiter.create(2.0d);
         createTables(database);
 
+        TokenStore tokenStore = new CookieTokenStore();
+
         // Init Controllers
         var spaceController = new SpaceController(database);
         var userController = new UserController(database);
         var auditController = new AuditController(database);
         var moderatorController = new ModeratorController(database);
+        var tokenController = new TokenController(tokenStore);
 
-        // SSL
-        secure("deploy/keystore.jks", "password", null, null);
+        before(userController::authenticate);
+        before(tokenController::validateToken);
+
+        before("/sessions", userController::requireAuthentication);
+        post("/sessions", tokenController::login);
+
+
 
         before(userController::authenticate);
 
