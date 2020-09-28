@@ -84,11 +84,8 @@ public class UserController {
         }
     }
 
-    public void requireAuthentication(Request req,
-                                      Response res) {
-        if (req.attribute("subject") == null) {
-            res.header("WWW-Authenticate",
-                    "Basic realm=\"/\", charset=\"UTF-8\"");
+    public void requireAuthentication(Request request, Response response) {
+        if (request.attribute("subject") == null) {
             halt(HttpStatus.UNAUTHORIZED_401);
         }
     }

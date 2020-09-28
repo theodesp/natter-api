@@ -30,12 +30,35 @@ public class TokenController {
     }
 
     public void validateToken(Request request, Response response) {
-        // WARNING: CSRF attack possible
-        tokenStore.read(request, null).ifPresent(token -> {
+        var tokenId = request.headers("X-CSRF-Token");
+        if (tokenId == null) return;
+
+        tokenStore.read(request, tokenId).ifPresent(token -> {
             if (now().isBefore(token.expiry)) {
                 request.attribute("subject", token.username);
                 token.attributes.forEach(request::attribute);
             }
         });
     }
+
+    public JSONObject logout(Request request, Response response) {
+        var tokenId = request.headers("X-CSRF-Token");
+        if (tokenId == null)
+            throw new IllegalArgumentException("missing token header");
+
+        tokenStore.revoke(request, tokenId);
+
+        response.status(HttpStatus.OK_200);
+        return new JSONObject();
+    }
+
+//    public void validateToken(Request request, Response response) {
+//        // WARNING: CSRF attack possible
+//        tokenStore.read(request, null).ifPresent(token -> {
+//            if (now().isBefore(token.expiry)) {
+//                request.attribute("subject", token.username);
+//                token.attributes.forEach(request::attribute);
+//            }
+//        });
+//    }
 }
