@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import service.CookieTokenStore;
 import service.DatabaseTokenStore;
+import service.HmacTokenStore;
 import service.TokenStore;
 import spark.Request;
 import spark.Response;
@@ -16,8 +17,10 @@ import spark.Spark;
 
 import static spark.Spark.*;
 
+import java.io.FileInputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.KeyStore;
 import java.util.Set;
 
 public class Main {
@@ -37,14 +40,23 @@ public class Main {
         before(new CorsFilter(Set.of("https://localhost:9999")));
         createTables(database);
 
+        var keyPassword = System.getProperty("keystore.password",
+                "changeit").toCharArray();
+        var keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(new FileInputStream("keystore.p12"),
+                keyPassword);
+
+        var macKey = keyStore.getKey("hmac-key", keyPassword);
+
         var databaseTokenStore = new DatabaseTokenStore(database);
+        var tokenStore = new HmacTokenStore(databaseTokenStore, macKey);
 
         // Init Controllers
         var spaceController = new SpaceController(database);
         var userController = new UserController(database);
         var auditController = new AuditController(database);
         var moderatorController = new ModeratorController(database);
-        var tokenController = new TokenController(databaseTokenStore);
+        var tokenController = new TokenController(tokenStore);
 
         before(userController::authenticate);
         before(tokenController::validateToken);
