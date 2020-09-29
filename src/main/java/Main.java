@@ -1,4 +1,5 @@
 import controller.*;
+import filter.CorsFilter;
 import org.dalesbred.Database;
 import org.dalesbred.result.EmptyResultException;
 import org.eclipse.jetty.http.HttpStatus;
@@ -6,6 +7,7 @@ import org.h2.jdbcx.JdbcConnectionPool;
 import org.json.JSONException;
 import org.json.JSONObject;
 import service.CookieTokenStore;
+import service.DatabaseTokenStore;
 import service.TokenStore;
 import spark.Request;
 import spark.Response;
@@ -16,9 +18,12 @@ import static spark.Spark.*;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Set;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        port(args.length > 0 ? Integer.parseInt(args[0])
+                : spark.Service.SPARK_DEFAULT_PORT);
 //        Spark.staticFiles.location("/public");
         // SSL
         secure("deploy/keystore.jks", "password", null, null);
@@ -29,16 +34,17 @@ public class Main {
         var database = Database.forDataSource(datasource);
 
         var rateLimiter = RateLimiter.create(2.0d);
+        before(new CorsFilter(Set.of("https://localhost:9999")));
         createTables(database);
 
-        TokenStore tokenStore = new CookieTokenStore();
+        var databaseTokenStore = new DatabaseTokenStore(database);
 
         // Init Controllers
         var spaceController = new SpaceController(database);
         var userController = new UserController(database);
         var auditController = new AuditController(database);
         var moderatorController = new ModeratorController(database);
-        var tokenController = new TokenController(tokenStore);
+        var tokenController = new TokenController(databaseTokenStore);
 
         before(userController::authenticate);
         before(tokenController::validateToken);
@@ -46,6 +52,12 @@ public class Main {
         before("/sessions", userController::requireAuthentication);
         post("/sessions", tokenController::login);
         delete("/sessions", tokenController::logout);
+
+        before("/expired_tokens", userController::requireAuthentication);
+        delete("/expired_tokens", (request, response) -> {
+            databaseTokenStore.deleteExpiredTokens();
+            return new JSONObject();
+        });
 
 
         before(userController::authenticate);

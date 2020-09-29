@@ -16,14 +16,13 @@ function createSpace(name, owner) {
     let csrfToken = getCookie('csrfToken');
 
     fetch(apiUrl + '/spaces', {
-        method: 'POST',
-        credentials: 'include',
-        body: JSON.stringify(data),
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-        }
-    })
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + csrfToken
+            }
+        })
     .then(response => {
         if (response.ok) {
             return response.json();
