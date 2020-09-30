@@ -1,3 +1,6 @@
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
 import controller.*;
 import filter.CorsFilter;
 import org.dalesbred.Database;
@@ -6,14 +9,13 @@ import org.eclipse.jetty.http.HttpStatus;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.json.JSONException;
 import org.json.JSONObject;
-import service.CookieTokenStore;
-import service.DatabaseTokenStore;
-import service.HmacTokenStore;
-import service.TokenStore;
+import service.*;
 import spark.Request;
 import spark.Response;
 import com.google.common.util.concurrent.*;
 import spark.Spark;
+
+import javax.crypto.SecretKey;
 
 import static spark.Spark.*;
 
@@ -46,10 +48,18 @@ public class Main {
         keyStore.load(new FileInputStream("keystore.p12"),
                 keyPassword);
 
+
         var macKey = keyStore.getKey("hmac-key", keyPassword);
 
-        var databaseTokenStore = new DatabaseTokenStore(database);
-        var tokenStore = new HmacTokenStore(databaseTokenStore, macKey);
+        var algorithm = JWSAlgorithm.HS256;
+        var signer = new MACSigner(macKey.getEncoded());
+        var verifier = new MACVerifier(macKey.getEncoded());
+        TokenStore tokenStore = new SignedJwtTokenStore(
+                signer, verifier, algorithm, "https://localhost:4567");
+
+        //var databaseTokenStore = new DatabaseTokenStore(database);
+//        var tokenStore = new HmacTokenStore(databaseTokenStore, macKey);
+
 
         // Init Controllers
         var spaceController = new SpaceController(database);
