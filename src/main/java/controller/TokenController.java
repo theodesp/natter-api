@@ -1,5 +1,6 @@
 package controller;
 
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 import org.eclipse.jetty.http.HttpStatus;
@@ -19,15 +20,47 @@ public class TokenController {
 
     public JSONObject login(Request request, Response response) {
         String subject = request.attribute("subject");
-        var expiry = now().plus(10, ChronoUnit.MINUTES);
+        var expiry = Instant.now().plus(10, ChronoUnit.MINUTES);
 
         var token = new TokenStore.Token(expiry, subject);
+        var scope = request.queryParamOrDefault("scope", DEFAULT_SCOPES);
+        token.attributes.put("scope", scope);
         var tokenId = tokenStore.create(request, token);
 
         response.status(HttpStatus.CREATED_201);
         return new JSONObject()
                 .put("token", tokenId);
     }
+
+    public Filter requireScope(String method, String requiredScope) {
+        return (request, response) -> {
+            if (!method.equalsIgnoreCase(request.requestMethod()))
+                return;
+
+            var tokenScope = request.<String>attribute("scope");
+            if (tokenScope == null) return;
+
+            if (!Set.of(tokenScope.split(" "))
+                    .contains(requiredScope)) {
+                response.header("WWW-Authenticate",
+                        "Bearer error=\"insufficient_scope\"," +
+                                "scope=\"" + requiredScope + "\"");
+                halt(HttpStatus.FORBIDDEN_403);
+            }
+        };
+    }
+
+//    public JSONObject login(Request request, Response response) {
+//        String subject = request.attribute("subject");
+//        var expiry = now().plus(10, ChronoUnit.MINUTES);
+//
+//        var token = new TokenStore.Token(expiry, subject);
+//        var tokenId = tokenStore.create(request, token);
+//
+//        response.status(HttpStatus.CREATED_201);
+//        return new JSONObject()
+//                .put("token", tokenId);
+//    }
 
     public void validateToken(Request request, Response response) {
         var tokenId = request.headers("Authorization");
@@ -60,6 +93,11 @@ public class TokenController {
         response.status(HttpStatus.OK_200);
         return new JSONObject();
     }
+
+    private static final String DEFAULT_SCOPES =
+            "create_space post_message read_message list_messages " +
+                    "delete_message add_member";
+
 
 //    public void validateToken(Request request, Response response) {
 //        var tokenId = request.headers("X-CSRF-Token");

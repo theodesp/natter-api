@@ -20,6 +20,7 @@ import javax.crypto.SecretKey;
 import static spark.Spark.*;
 
 import java.io.FileInputStream;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyStore;
@@ -54,12 +55,16 @@ public class Main {
         var algorithm = JWSAlgorithm.HS256;
         var signer = new MACSigner(macKey.getEncoded());
         var verifier = new MACVerifier(macKey.getEncoded());
-        TokenStore tokenStore = new SignedJwtTokenStore(
-                signer, verifier, algorithm, "https://localhost:4567");
+//        TokenStore tokenStore = new SignedJwtTokenStore(
+//                signer, verifier, algorithm, "https://localhost:4567");
 
         //var databaseTokenStore = new DatabaseTokenStore(database);
 //        var tokenStore = new HmacTokenStore(databaseTokenStore, macKey);
 
+        var introspectionEndpoint =
+                URI.create("https://as.example.com:8443/oauth2/introspect");
+        SecureTokenStore tokenStore = new OAuth2TokenStore(
+                introspectionEndpoint, clientId, clientSecret);
 
         // Init Controllers
         var spaceController = new SpaceController(database);
@@ -72,8 +77,47 @@ public class Main {
         before(tokenController::validateToken);
 
         before("/sessions", userController::requireAuthentication);
+        before("/sessions",
+                tokenController.requireScope("POST", "full_access"));
         post("/sessions", tokenController::login);
         delete("/sessions", tokenController::logout);
+
+        before("/spaces", userController::requireAuthentication);
+        before("/spaces",
+                tokenController.requireScope("POST", "create_space"));
+        post("/spaces", spaceController::createSpace);
+
+        before("/spaces/*/messages",
+                tokenController.requireScope("POST", "post_message"));
+        before("/spaces/:spaceId/messages",
+                userController.requirePermission("POST", "w"));
+        post("/spaces/:spaceId/messages", spaceController::postMessage);
+
+        before("/spaces/*/messages/*",
+                tokenController.requireScope("GET", "read_message"));
+        before("/spaces/:spaceId/messages/*",
+                userController.requirePermission("GET", "r"));
+        get("/spaces/:spaceId/messages/:msgId",
+                spaceController::readMessage);
+
+        before("/spaces/*/messages",
+                tokenController.requireScope("GET", "list_messages"));
+        before("/spaces/:spaceId/messages",
+                userController.requirePermission("GET", "r"));
+        get("/spaces/:spaceId/messages", spaceController::findMessages);
+
+        before("/spaces/*/members",
+                tokenController.requireScope("POST", "add_member"));
+        before("/spaces/:spaceId/members",
+                userController.requirePermission("POST", "rwd"));
+        post("/spaces/:spaceId/members", spaceController::addMember);
+
+        before("/spaces/*/messages/*",
+                tokenController.requireScope("DELETE", "delete_message"));
+        before("/spaces/:spaceId/messages/*",
+                userController.requirePermission("DELETE", "d"));
+        delete("/spaces/:spaceId/messages/:msgId",
+                moderatorController::deletePost);
 
         before("/expired_tokens", userController::requireAuthentication);
         delete("/expired_tokens", (request, response) -> {
@@ -86,31 +130,6 @@ public class Main {
 
         before(auditController::auditRequestStart);
         afterAfter(auditController::auditRequestEnd);
-
-        before("/spaces", userController::requireAuthentication);
-        post("/spaces", spaceController::createSpace);
-
-        before("/spaces/:spaceId/messages",
-                userController.requirePermission("POST", "w"));
-        post("/spaces/:spaceId/messages", spaceController::postMessage);
-
-        before("/spaces/:spaceId/messages/*",
-                userController.requirePermission("GET", "r"));
-        get("/spaces/:spaceId/messages/:msgId",
-                spaceController::readMessage);
-
-        before("/spaces/:spaceId/messages",
-                userController.requirePermission("GET", "r"));
-        get("/spaces/:spaceId/messages", spaceController::findMessages);
-
-        before("/spaces/:spaceId/members",
-                userController.requirePermission("POST", "rwd"));
-        post("/spaces/:spaceId/members", spaceController::addMember);
-
-        before("/spaces/:spaceId/messages/*",
-                userController.requirePermission("DELETE", "d"));
-        delete("/spaces/:spaceId/messages/:msgId",
-                moderatorController::deletePost);
 
         post("/users", userController::registerUser);
         get("/logs", auditController::readAuditLog);
